@@ -1,0 +1,64 @@
+<!-- templates/input.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Information Extraction & Text Summarization</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='index_style.css') }}">
+     <!-- <link rel="stylesheet" href="../static/index_style.css"> -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="navbar-container">
+            <a href="{{ url_for('index') }}" class="nav-logo">
+                <i class="fas fa-home"></i>
+            </a>
+            <h1 class="nav-title">Text Summarization</h1>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <section class="input-section">
+            <h2>Enter Text or Upload File</h2>
+            <div class="input-toggle">
+                <button id="text-toggle" class="toggle-btn active">Enter Text</button>
+                <button id="file-toggle" class="toggle-btn">Upload File</button>
+            </div>
+            
+            <form id="input-form" method="POST" action="{{ url_for('process_input') }}" enctype="multipart/form-data">
+                <div id="text-input-container" class="input-container active">
+                    <textarea id="text-input" name="text_input" placeholder="Enter your text here..." rows="8"></textarea>
+                </div>
+                
+                <div id="file-input-container" class="input-container">
+                    <div class="file-upload">
+                        <input type="file" id="file-input" name="file_input" accept=".txt,.doc,.docx">
+                        <label for="file-input">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span id="file-name">Choose a file</span>
+                        </label>
+                    </div>
+                    <p class="file-info">Accepted formats: .txt, .doc, .docx</p>
+                </div>
+                
+                <button type="submit" class="submit-btn">
+                    <i class="fas fa-paper-plane"></i> Process Document
+                </button>
+            </form>
+        </section>
+
+        
+    </main>
+
+    <footer>
+        <p>&copy; Nguyễn Minh Đăng</p>
+    </footer>
+
+    <!-- <script src="{{ url_for('static', filename='js/input_script.js') }}"></script> -->
+     <script src="../static/index_script.js"></script>
+
+</body>
+</html>
