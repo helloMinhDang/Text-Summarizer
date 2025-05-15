@@ -1,2 +1,3 @@
 # Text-Summarizer
-My personal project on NLP 
+
+My personal NLP project for automatic text summarization in Vietnamese and English.
