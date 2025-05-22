@@ -1,64 +1,128 @@
-<!-- templates/input.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Information Extraction & Text Summarization</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='index_style.css') }}">
-     <!-- <link rel="stylesheet" href="../static/index_style.css"> -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Text Summarizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- <link rel="stylesheet" href="../static/style.css"> -->
+    
 </head>
 <body>
-    <header class="navbar">
-        <div class="navbar-container">
-            <a href="{{ url_for('index') }}" class="nav-logo">
-                <i class="fas fa-home"></i>
-            </a>
-            <h1 class="nav-title">Text Summarization</h1>
-        </div>
-    </header>
+    <div class="container">
+        <header>
+            <h1>Text Summarizer</h1>
+        </header>
 
-    <main class="container">
-
-        <section class="input-section">
-            <h2>Enter Text or Upload File</h2>
-            <div class="input-toggle">
-                <button id="text-toggle" class="toggle-btn active">Enter Text</button>
-                <button id="file-toggle" class="toggle-btn">Upload File</button>
-            </div>
-            
-            <form id="input-form" method="POST" action="{{ url_for('process_input') }}" enctype="multipart/form-data">
-                <div id="text-input-container" class="input-container active">
-                    <textarea id="text-input" name="text_input" placeholder="Enter your text here..." rows="8"></textarea>
-                </div>
-                
-                <div id="file-input-container" class="input-container">
-                    <div class="file-upload">
-                        <input type="file" id="file-input" name="file_input" accept=".txt,.doc,.docx">
-                        <label for="file-input">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <span id="file-name">Choose a file</span>
-                        </label>
+        <div class="main-content">
+            <!-- Left Panel - Input -->
+            <div class="left-panel">
+                <form method="POST" id="summaryForm">
+                    <div class="input-section">
+                        <label for="text-input">Enter Text to Summarize:</label>
+                        <textarea 
+                            id="text-input" 
+                            name="text-input" 
+                            placeholder="Paste your text here..."
+                            required>{{ input_text }}</textarea>
                     </div>
-                    <p class="file-info">Accepted formats: .txt, .doc, .docx</p>
+
+                    <div class="volume-section">
+                        <label for="volume">Summary Length:</label>
+                        <div class="volume-slider-container">
+                            <input 
+                                type="range" 
+                                id="volume" 
+                                name="volume" 
+                                min="1" 
+                                max="3" 
+                                value="2" 
+                                class="volume-slider">
+                            <div class="volume-labels">
+                                <span>Short</span>
+                                <span>Medium</span>
+                                <span>Long</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <span class="btn-text">Generate Summaries</span>
+                        <div class="loading-spinner" style="display: none;"></div>
+                    </button>
+                </form>
+
+                {% if error %}
+                <div class="error-message">
+                    <strong>Error:</strong> {{ error }}
                 </div>
-                
-                <button type="submit" class="submit-btn">
-                    <i class="fas fa-paper-plane"></i> Process Document
-                </button>
-            </form>
-        </section>
+                {% endif %}
+            </div>
 
-        
-    </main>
+            <!-- Right Panel - Results -->
+            <div class="right-panel">
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <button class="tab-btn active" data-tab="tfidf">TF-IDF TextRank</button>
+                        <button class="tab-btn" data-tab="embedding">Sentence Embedding</button>
+                        <button class="tab-btn" data-tab="abstractive">Abstractive</button>
+                    </div>
 
-    <footer>
-        <p>&copy; Nguyễn Minh Đăng</p>
-    </footer>
+                    <div class="tabs-content">
+                        <div class="tab-panel active" id="tfidf-panel">
+                            <div class="summary-header">
+                                <h3>TF-IDF TextRank Summary</h3>
+                                <p>Extractive summarization using TF-IDF and TextRank algorithms</p>
+                            </div>
+                            <div class="summary-content">
+                                {% if tfidf_summary %}
+                                    <p>{{ tfidf_summary }}</p>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <p>No summary generated yet. Enter text and click "Generate Summaries" to see results.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
 
-    <!-- <script src="{{ url_for('static', filename='js/input_script.js') }}"></script> -->
-     <script src="../static/index_script.js"></script>
+                        <div class="tab-panel" id="embedding-panel">
+                            <div class="summary-header">
+                                <h3>Sentence Embedding Summary</h3>
+                                <p>Extractive summarization using sentence embeddings</p>
+                            </div>
+                            <div class="summary-content">
+                                {% if embedding_summary %}
+                                    <p>{{ embedding_summary }}</p>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <p>No summary generated yet. Enter text and click "Generate Summaries" to see results.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
 
+                        <div class="tab-panel" id="abstractive-panel">
+                            <div class="summary-header">
+                                <h3>Abstractive Summary</h3>
+                                <p>BART-based abstractive summarization</p>
+                            </div>
+                            <div class="summary-content">
+                                {% if abstractive_summary %}
+                                    <p>{{ abstractive_summary }}</p>
+                                {% else %}
+                                    <div class="empty-state">
+                                        <p>No summary generated yet. Enter text and click "Generate Summaries" to see results.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+     <!-- <script src="../static/script.js"></script> -->
 </body>
 </html>

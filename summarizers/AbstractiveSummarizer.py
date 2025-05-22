@@ -1,20 +1,39 @@
 from transformers import BartForConditionalGeneration, BartTokenizer
 
+from transformers import BartTokenizer, BartForConditionalGeneration
+
 class AbstractiveSummarizer:
     def __init__(self, model_name="facebook/bart-large-cnn"):
         self.tokenizer = BartTokenizer.from_pretrained(model_name)
         self.model = BartForConditionalGeneration.from_pretrained(model_name)
 
-    def summarize(self, text, max_length=20, min_length=3):
+    def summarize(self, text, volume="short"):
         if not text or not text.strip():
             return "No content to summarize."
 
+        assert volume in ['short', 'medium', 'high'], "Volume must be 'short', 'medium', or 'high'"
+
+        # Encode the input text
         inputs = self.tokenizer.encode(
             text,
             return_tensors="pt",
             max_length=1024,
             truncation=True
         )
+
+        # Get length of original tokenized input
+        input_length = inputs.shape[1]
+
+        # Define length ratios for each volume
+        length_ratios = {
+            'short': 0.1,
+            'medium': 0.25,
+            'high': 0.35
+        }
+
+        # Compute dynamic lengths
+        max_length = max(10, int(input_length * length_ratios[volume]))  # at least 10 tokens
+        min_length = max(5, int(max_length * 0.6))  # min length = 60% of max length
 
         summary_ids = self.model.generate(
             inputs,
@@ -28,9 +47,3 @@ class AbstractiveSummarizer:
         summary = self.tokenizer.decode(summary_ids[0], skip_special_tokens=True)
         return summary
 
-summary = AbstractiveSummarizer()
-text = '''
-Ever noticed how plane seats appear to be getting smaller and smaller? With increasing numbers of people taking to the skies, some experts are questioning if having such packed out planes is putting passengers at risk. They say that the shrinking space on aeroplanes is not only uncomfortable - it's putting our health and safety in danger. More than squabbling over the arm rest, shrinking space on planes putting our health and safety in danger? This week, a U.S consumer advisory group set up by the Department of Transportation said at a public hearing that while the government is happy to set standards for animals flying on planes, it doesn't stipulate a minimum amount of space for humans. 'In a world where animals have more rights to space and food than humans,' said Charlie Leocha, consumer representative on the committee.Â 'It is time that the DOT and FAA take a stand for humane treatment of passengers.' But could crowding on planes lead to more serious issues than fighting for space in the overhead lockers, crashing elbows and seat back kicking? Tests conducted by the FAA use planes with a 31 inch pitch, a standard which on some airlines has decreased . Many economy seats on United Airlines have 30 inches of room, while some airlines offer as little as 28 inches . Cynthia Corbertt, a human factors researcher with the Federal Aviation Administration, that it conducts tests on how quickly passengers can leave a plane. But these tests are conducted using planes with 31 inches between each row of seats, a standard which on some airlines has decreased, reported the Detroit News. The distance between two seats from one point on a seat to the same point on the seat behind it is known as the pitch. While most airlines stick to a pitch of 31 inches or above, some fall below this. While United Airlines has 30 inches of space, Gulf Air economy seats have between 29 and 32 inches, Air Asia offers 29 inches and Spirit Airlines offers just 28 inches. British Airways has a seat pitch of 31 inches, while easyJet has 29 inches, Thomson's short haul seat pitch is 28 inches, and Virgin Atlantic's is 30-31.
-'''
-
-print(summary.summarize(text))

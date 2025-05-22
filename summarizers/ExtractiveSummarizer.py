@@ -1,70 +1,128 @@
-import torch
-import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer
 import re
-import networkx as nx
+from nltk import sent_tokenize, word_tokenize, pos_tag
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import WordNetLemmatizer
 from sklearn.metrics.pairwise import cosine_similarity
-from transformers import AutoTokenizer, AutoModel
-import py_vncorenlp
+import networkx as nx
+import pandas as pd
+from sentence_transformers import SentenceTransformer
 
 
-# This class also includes POS and NER tagging for both Vietnamese and English texts.
 class ExtractiveSummarizer:
-    # Load the VnCoreNLP model for word segmentation
-    # and the PhoBERT model for sentence embeddings
-    def __init__(self, vncorenlp_path: str = 'E:/VnCoreNLP-master'):
-        self.rdrsegmenter = py_vncorenlp.VnCoreNLP(annotators=["wseg"], save_dir=vncorenlp_path)
-        self.tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
-        self.model = AutoModel.from_pretrained("vinai/phobert-base-v2", add_pooling_layer=False)
+    def __init__(self, language = "english"):
+        self.language = language
+        self.vectorizer = TfidfVectorizer()
+        self.stop_words = set(stopwords.words(self.language))
+        self.lemmatizer = WordNetLemmatizer()
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+    def get_wordnet_pos(self, treebank_tag):
+        '''
+        This function convert Treebank POS tag to WordNet POS tag, in order to perform lemmatization
+        '''
+        if treebank_tag.startswith('J'):
+            return wordnet.ADJ
+        elif treebank_tag.startswith('V'):
+            return wordnet.VERB
+        elif treebank_tag.startswith('N'):
+            return wordnet.NOUN
+        elif treebank_tag.startswith('R'):
+            return wordnet.ADV
+        else:
+            return wordnet.NOUN
     
-    def _segment_sentences(self, raw_text):
-        return self.rdrsegmenter.word_segment(raw_text)  # list of segmented sentences
-
-    def _encode_sentence(self, sentence):
-        input_ids = torch.tensor([self.tokenizer.encode(sentence, truncation=True, max_length=256)])
-        with torch.no_grad():
-            outputs = self.model(input_ids)[0]  # last_hidden_state
-        embedding = outputs.mean(dim=1)  # [1, hidden_size]
-        return embedding.squeeze(0).numpy()  # [hidden_size]
-
-    def _build_similarity_matrix(self, sentence_vectors):
-        n = len(sentence_vectors)
-        sim_matrix = np.zeros((n, n))
-        for i in range(n):
-            for j in range(n):
-                if i != j:
-                    sim_matrix[i][j] = cosine_similarity(
-                        sentence_vectors[i].reshape(1, -1),
-                        sentence_vectors[j].reshape(1, -1)
-                    )[0, 0]
-        return sim_matrix
-
-    def _clean_segmented_sentence(self, sentence):
-        # Clean the segmented sentence to remove _ and extra spaces
-        sentence = sentence.replace("_", " ")
-        sentence = re.sub(r"\s+([.,!?;:])", r"\1", sentence)
-        sentence = re.sub(r'\(\s*([^\(\)]+?)\s*\)', r'(\1)', sentence)
+    def lemmatize_sentence(self, sentence):
+        '''
+        This function return lemmatized sentence, and also remove stopwords
+        '''
+        tokens = word_tokenize(sentence)
+        tagged = pos_tag(tokens)
+        lemmatized = [
+            self.lemmatizer.lemmatize(word, self.get_wordnet_pos(pos))
+            for word, pos in tagged
+            if word.lower() not in self.stop_words
+        ]
+        return ' '.join(lemmatized)
+    
+    def preprocessing_text(self, sentence, lemmatization = True):
+        '''
+        This function removes special characters, extra spaces, perform lemmatization (optional), and return lowercase
+        '''
+        sentence = sentence.lower()
+        sentence = re.sub(r'\W+', ' ', sentence)
+        sentence = re.sub(r'\s+', ' ', sentence)
+        if lemmatization:
+            sentence = self.lemmatize_sentence(sentence)
         return sentence
 
-    def summarize(self, raw_text, top_n):
-        sentences = self._segment_sentences(raw_text) 
-        if len(sentences) == 0:
-            return ""
+    def summarize_TFIDF_TextRank(self, text, volume='short'):
+        '''
+        This function preprocessing text, convert sentences to vectors using TF-IDF, compute similarity matrix, use TextRank to find top k sentences.
+        param volume = ['short', 'medium', 'long'] correspond to 15%, 25%, and 35% number of orignial sentences
+        '''
+        assert volume in ['short', 'medium', 'long']
+        sentences = sent_tokenize(text)
+        top_k_ratio = {
+            'short': 0.1,
+            'medium': 0.25,
+            'long': 0.35
+        }
+        top_k = max(1, round(len(sentences) * top_k_ratio[volume])) # find number of top k to decide the length of summary
 
-        sentence_vectors = [self._encode_sentence(sent) for sent in sentences]
-        sim_matrix = self._build_similarity_matrix(sentence_vectors)
+        processed_sentences = [self.preprocessing_text(sentence, lemmatization=True) for sentence in sentences]
+
+        # TF-IDF matrix
+        tfidf_matrix = self.vectorizer.fit_transform(processed_sentences)
+
+        # Similarity matrix
+        similarity_matrix = cosine_similarity(tfidf_matrix)
+
+        # Build graph
+        graph = nx.from_numpy_array(similarity_matrix)
 
         # PageRank
-        nx_graph = nx.from_numpy_array(sim_matrix)
-        scores = nx.pagerank(nx_graph)
+        scores = nx.pagerank(graph)
 
-        # Lấy index gốc của các câu được chọn
-        top_sentence_indices = [i for i, _ in sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]]
+        ranked_sentences = sorted(((scores[i], i) for i in range(len(sentences))), reverse=True)
+        top_sentence_indices = sorted([idx for (_, idx) in ranked_sentences[:top_k]])
 
-        # Sắp xếp lại theo thứ tự xuất hiện trong văn bản
-        top_sentence_indices.sort()
-        # Lấy lại câu gốc theo thứ tự đó
-        summary_sentences = [sentences[i] for i in top_sentence_indices]
+        summary = ' '.join([sentences[i] for i in top_sentence_indices])
+        print(top_k)
+        return summary
+            
+    def summarize_sentence_embedding(self, text, volume='short'):
+        assert volume in ['short', 'medium', 'long']
+        sentences = sent_tokenize(text)
+        top_k_ratio = {
+            'short': 0.1,
+            'medium': 0.25,
+            'long': 0.5
+        }
+        top_k = max(1, round(len(sentences) * top_k_ratio[volume]))
 
-        cleaned_summary = [self._clean_segmented_sentence(s) for s in summary_sentences]
-        print(top_n)
-        return "\n".join(cleaned_summary)
+        embeddings = self.embedding_model.encode(sentences)
+        similarity_matrix = cosine_similarity(embeddings)
+        graph = nx.from_numpy_array(similarity_matrix)
+        scores = nx.pagerank(graph)
+        ranked_sentences = sorted(((scores[i], i) for i in range(len(sentences))), reverse=True)
+        top_sentence_indices = sorted([idx for (_, idx) in ranked_sentences[:top_k]])
+        summary = ' '.join([sentences[i] for i in top_sentence_indices])
+
+        return summary
+
+# text = '''
+# Artificial Intelligence (AI) is transforming industries. 
+# From healthcare to finance, AI tools are being deployed at scale. 
+# The future of work is rapidly evolving. 
+# AI can automate tasks, but also augment human intelligence. 
+# Ethical concerns remain important in AI development. 
+# Education systems need to adapt to AI-driven demands.AI can automate tasks, but also augment human intelligence. 
+# Ethical concerns remain important in AI development. 
+# Education systems need to adapt to AI-driven demands.AI can automate tasks, but also augment human intelligence. 
+# Ethical concerns remain important in AI development. 
+# Education systems need to adapt to AI-driven demands.
+# '''
+
+# t = ExtractiveSummarizer()
+# print(t.summarize_TFIDF_TextRank(text, volume='long'))

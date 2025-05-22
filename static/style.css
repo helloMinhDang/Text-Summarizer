@@ -1,0 +1,371 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 30px;
+    color: white;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Main content layout */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 30px;
+    height: calc(100vh - 200px);
+    min-height: 600px;
+}
+
+/* Left panel - Input */
+.left-panel {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.input-section {
+    flex: 1;
+    margin-bottom: 25px;
+}
+
+.input-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #555;
+    font-size: 1.1rem;
+}
+
+#text-input {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    max-height: 500px;
+    padding: 15px;
+    overflow-y: auto;
+    border: 2px solid #e1e5e9;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.3s ease;
+}
+
+#text-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Volume section */
+.volume-section {
+    margin-bottom: 25px;
+}
+
+.volume-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #555;
+    font-size: 1.1rem;
+}
+
+.volume-slider-container {
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.volume-slider {
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: #e1e5e9;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+.volume-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    border: none;
+}
+
+.volume-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #666;
+}
+
+.volume-display {
+    text-align: center;
+    margin-top: 10px;
+    font-weight: 500;
+    color: #667eea;
+}
+
+/* Submit button */
+.submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error message */
+.error-message {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c66;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+/* Right panel - Results */
+.right-panel {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tabs */
+.tabs-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.tabs-header {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e1e5e9;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 20px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-btn:hover {
+    background: #e9ecef;
+    color: #495057;
+}
+
+.tab-btn.active {
+    color: #667eea;
+    background: white;
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #667eea;
+}
+
+/* Tab content */
+.tabs-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.tab-panel {
+    height: 100%;
+    padding: 30px;
+    display: none;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.tab-panel.active {
+    display: flex;
+}
+
+.summary-header {
+    margin-bottom: 25px;
+    border-bottom: 1px solid #e1e5e9;
+    padding-bottom: 15px;
+}
+
+.summary-header h3 {
+    color: #333;
+    font-size: 1.3rem;
+    margin-bottom: 5px;
+}
+
+.summary-header p {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.summary-content {
+    flex: 1;
+    line-height: 1.6;
+}
+
+.summary-content p {
+    font-size: 15px;
+    color: #444;
+    text-align: justify;
+}
+
+.empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: #999;
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        height: auto;
+        gap: 20px;
+    }
+    
+    .left-panel {
+        padding: 20px;
+    }
+    
+    #text-input {
+        min-height: 200px;
+    }
+    
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .tab-btn {
+        padding: 12px 15px;
+        font-size: 13px;
+    }
+    
+    .tab-panel {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        padding: 15px;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .tabs-header {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        text-align: left;
+    }
+}
